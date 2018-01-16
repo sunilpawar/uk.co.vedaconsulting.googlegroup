@@ -1,8 +1,13 @@
 <?php
 class CRM_Googlegroup_Form_Setting extends CRM_Core_Form {
 
-  const 
-    GG_SETTING_GROUP = 'Googlegroup Preferences';
+  protected $_values;
+
+
+  function preProcess() {
+    // Needs to be here as from is build before default values are set
+    $this->_values = CRM_Googlegroup_Utils::getSettings();
+  }
     
   /**
    * Function to actually build the form
@@ -22,11 +27,8 @@ class CRM_Googlegroup_Form_Setting extends CRM_Core_Form {
      $this->addElement('text', 'domain_name', ts('Domain Names'), array(
       'size' => 48,
     ));  
-    
 
-    $accessToken = CRM_Core_BAO_Setting::getItem(self::GG_SETTING_GROUP,
-       'access_token', NULL, FALSE
-    );
+    $accessToken = $this->_values['access_token'];
     
     if (empty($accessToken)) {
       $buttons = array(
@@ -52,19 +54,14 @@ class CRM_Googlegroup_Form_Setting extends CRM_Core_Form {
       $redirectUrl    = CRM_Utils_System::url('civicrm/googlegroup/settings', 'reset=1',  TRUE, NULL, FALSE, TRUE, TRUE);
       $client->setRedirectUri($redirectUrl);
       $client->authenticate($_GET['code']);
-      CRM_Core_BAO_Setting::setItem($client->getRefreshToken(), self::GG_SETTING_GROUP, 'access_token' );
+      CRM_Core_BAO_Setting::setItem($client->getRefreshToken(), CRM_Googlegroup_Utils::GG_SETTING_GROUP, 'access_token' );
       header('Location: ' . filter_var($redirectUrl, FILTER_SANITIZE_URL));
     }
   }
 
-   public function setDefaultValues() {
-    $defaults = $details = array();
-    if(GOOGLE_CLIENT_KEY && GOOGLE_SECERT_KEY) {
-      $defaults['client_key']    = GOOGLE_CLIENT_KEY;
-      $defaults['client_secret'] = GOOGLE_SECERT_KEY;
-    }
-    $domains = CRM_Core_BAO_Setting::getItem(CRM_Googlegroup_Form_Setting::GG_SETTING_GROUP, 'domain_name');
-    $defaults['domain_name'] = implode(',', $domains);
+  public function setDefaultValues() {
+    $defaults = $this->_values;
+    $defaults['domain_name'] = implode(',', $this->_values['domain_name']);
 
     return $defaults;
   }
@@ -77,13 +74,16 @@ class CRM_Googlegroup_Form_Setting extends CRM_Core_Form {
    * @return None
    */
   public function postProcess() {
-    $params = $this->controller->exportValues($this->_name); 
-    $domains = array();
-    $domains = explode(',', trim($params['domain_name']));
-    CRM_Core_BAO_Setting::setItem($domains,
-        self::GG_SETTING_GROUP, 'domain_name'
-      );
-     $accessToken = CRM_Core_BAO_Setting::getItem(self::GG_SETTING_GROUP,
+    $params = $this->controller->exportValues($this->_name);
+
+    foreach(array('client_key', 'client_secret', 'domain_name') as $setting) {
+      if ($setting == 'domain_name') {
+        $params['domain_name'] = explode(',', trim($params['domain_name']));
+      }
+      CRM_Googlegroup_Utils::setSetting($params[$setting], $setting);
+    }
+
+    $accessToken = CRM_Core_BAO_Setting::getItem(CRM_Googlegroup_Utils::GG_SETTING_GROUP,
        'access_token', NULL, FALSE
     );
     

@@ -3,8 +3,6 @@
 require_once 'googlegroup.civix.php';
 require_once 'google-api-php-client/src/Google/autoload.php';
 set_include_path(get_include_path() . PATH_SEPARATOR . 'google-api-php-client/src');
-define('GOOGLE_CLIENT_KEY', '');
-define('GOOGLE_SECERT_KEY', '');
 
 /**
  * Implements hook_civicrm_config().

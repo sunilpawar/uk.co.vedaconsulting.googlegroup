@@ -1,11 +1,20 @@
 <?php
 
 class CRM_Googlegroup_Utils {
+  const
+    GG_SETTING_GROUP = 'Googlegroup Preferences';
+  static function getSettings() {
+    return CRM_Core_BAO_Setting::getItem(CRM_Googlegroup_Utils::GG_SETTING_GROUP);
+  }
 
+  static function setSetting($value, $key) {
+    return CRM_Core_BAO_Setting::setItem($value, CRM_Googlegroup_Utils::GG_SETTING_GROUP, $key);
+  }
   static function googleClient() {
+    $googlSettings = CRM_Googlegroup_Utils::getSettings();
     $client = new Google_Client();
-    $client->setClientId(GOOGLE_CLIENT_KEY);
-    $client->setClientSecret(GOOGLE_SECERT_KEY);
+    $client->setClientId($googlSettings['client_key']);
+    $client->setClientSecret($googlSettings['client_secret']);
     $client->setAccessType('offline');
     $client->addScope(Google_Service_Directory::ADMIN_DIRECTORY_GROUP);
     return $client;
